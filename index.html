@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TraceLess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== TOP APP BAR ===== -->
+  <header class="top-bar window-drag-region">
+    <div class="top-bar-leading no-drag">
+      <button class="m3-icon-btn" id="btn-history-drawer-toggle" title="Recent Files">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <img src="logo.png" alt="TraceLess Logo" class="top-bar-logo">
+      <span class="top-bar-title">TraceLess</span>
+    </div>
+    <div class="top-bar-trailing no-drag">
+      <!-- Theme toggle -->
+      <button class="m3-icon-btn" id="btn-theme" title="Toggle light/dark mode">
+        <span class="material-symbols-outlined" id="theme-icon">light_mode</span>
+      </button>
+      <!-- Donate -->
+      <a href="https://paypal.me/Benttisse" target="_blank" class="m3-icon-btn" id="btn-donate-top" title="Support TraceLess (Donate via PayPal)">
+        <span class="material-symbols-outlined">volunteer_activism</span>
+      </a>
+      <!-- Custom Titlebar Actions -->
+      <button class="m3-icon-btn window-control-btn" id="btn-minimize" title="Minimize">
+        <span class="material-symbols-outlined">minimize</span>
+      </button>
+      <button class="m3-icon-btn window-control-btn" id="btn-maximize" title="Maximize">
+        <span class="material-symbols-outlined">crop_square</span>
+      </button>
+      <button class="m3-icon-btn window-control-btn btn-close" id="btn-close" title="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+
+    <!-- Empty State / Landing Dashboard -->
+    <section class="empty-state" id="empty-state">
+      <div class="landing-split">
+        <!-- Left Side: Interactive Demo & Visual Hook -->
+        <div class="landing-info">
+          <div class="hero-badge">
+            <span class="material-symbols-outlined">shield</span>
+            100% Local & Offline
+          </div>
+          <h1 class="hero-title">Your photos tell stories you didn't write.</h1>
+          <p class="hero-subtitle">
+            Every file you share carries hidden digital fingerprints. Your camera's serial number, your home GPS coordinates, and exact timestamps are embedded in your photos and PDFs. TraceLess scrubs these markers in one click completely offline.
+          </p>
+
+          <!-- Interactive Sandbox Demo -->
+          <div class="sandbox-demo">
+            <div class="sandbox-header">
+              <span class="material-symbols-outlined header-icon">science</span>
+              <strong>Try the Interactive Privacy Demo</strong>
+            </div>
+            
+            <div class="sandbox-content">
+              <!-- Mock Photo Visual -->
+              <div class="sandbox-visual">
+                <div class="sandbox-photo">
+                  <span class="material-symbols-outlined sandbox-pin-icon" id="sandbox-pin">pin_drop</span>
+                  <div class="sandbox-gps-badge" id="sandbox-gps-badge">GPS Coordinates: 37.7749° N, 122.4194° W</div>
+                </div>
+              </div>
+              
+              <!-- Mock Metadata Tags -->
+              <div class="sandbox-meta-panel">
+                <div class="sandbox-tag" id="tag-sandbox-device">
+                  <span class="material-symbols-outlined tag-icon">photo_camera</span>
+                  <div class="tag-details">
+                    <span class="tag-name">Device Model</span>
+                    <span class="tag-value" id="val-sandbox-device">iPhone 15 Pro (Sn: 897FA88B)</span>
+                  </div>
+                </div>
+                
+                <div class="sandbox-tag" id="tag-sandbox-location">
+                  <span class="material-symbols-outlined tag-icon">my_location</span>
+                  <div class="tag-details">
+                    <span class="tag-name">Exact Location</span>
+                    <span class="tag-value" id="val-sandbox-location">37.7749° N, 122.4194° W (San Francisco, CA)</span>
+                  </div>
+                </div>
+                
+                <div class="sandbox-tag" id="tag-sandbox-date">
+                  <span class="material-symbols-outlined tag-icon">calendar_month</span>
+                  <div class="tag-details">
+                    <span class="tag-name">Date Taken</span>
+                    <span class="tag-value" id="val-sandbox-date">2026:10:12 16:12:04 (Original Time)</span>
+                  </div>
+                </div>
+                
+                <button class="m3-btn m3-btn-filled sandbox-action-btn" id="btn-sandbox-scrub">
+                  <span class="material-symbols-outlined" id="icon-sandbox-scrub">cleaning_services</span>
+                  <span id="text-sandbox-scrub">Scrub Demo Metadata</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+
+        </div>
+
+        <!-- Right Side: The Drag and Drop Zone & Guarantee -->
+        <div class="landing-upload-side">
+          <div class="empty-state-card" id="drop-card">
+            <div class="empty-state-icon-ring">
+              <span class="material-symbols-outlined upload-icon-big">cloud_upload</span>
+            </div>
+            <h2>Clean Your Files</h2>
+            <p class="drop-hint">Drag & drop files here, or click to browse</p>
+            <button class="m3-btn m3-btn-filled" id="btn-open-files">
+              <span class="material-symbols-outlined">file_upload</span>
+              Select Files
+            </button>
+            <div class="upload-security-note">
+              <span class="material-symbols-outlined">lan_off</span>
+              <span>100% Offline Local Processing</span>
+            </div>
+          </div>
+
+          <!-- Sleek Horizontal Guarantee Banner -->
+          <div class="security-banner-sleek">
+            <div class="security-banner-item">
+              <span class="material-symbols-outlined banner-icon">lock_person</span>
+              <div class="banner-text">
+                <strong>Zero Leakage Guarantee</strong>
+                <span>TraceLess runs locally. No data, logs, cookies, or files ever leave your machine. It requires no internet access.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Donation Widget -->
+          <div class="donation-widget-card">
+            <div class="donation-widget-header">
+              <span class="material-symbols-outlined widget-icon">volunteer_activism</span>
+              <div class="widget-header-text">
+                <strong>Support Our Mission</strong>
+                <span>Help keep TraceLess free, offline, and updated.</span>
+              </div>
+            </div>
+            
+            <div class="donation-widget-presets">
+              <button class="donation-preset-btn" data-amount="3">$3</button>
+              <button class="donation-preset-btn active" data-amount="5">$5</button>
+              <button class="donation-preset-btn" data-amount="10">$10</button>
+              <button class="donation-preset-btn" data-amount="25">$25</button>
+              <button class="donation-preset-btn" data-amount="custom">Custom</button>
+            </div>
+            
+            <div class="donation-widget-custom hidden" id="donation-custom-container">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="donation-custom-amount" min="1" step="1" value="15" placeholder="Amount">
+            </div>
+
+            <a href="https://paypal.me/Benttisse/5" target="_blank" class="donation-widget-submit" id="btn-widget-donate">
+              <span class="material-symbols-outlined">payments</span>
+              <span>Donate via PayPal</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supported File Formats Section -->
+      <div class="supported-formats-section">
+        <h3 class="section-title">Supported Formats</h3>
+        <div class="formats-list">
+          <div class="format-badge">
+            <span class="material-symbols-outlined format-badge-icon">image</span>
+            <div class="format-badge-text">
+              <strong>Images</strong>
+              <span>JPG, PNG, WebP, HEIC, GIF, TIFF, BMP, ICO, Raw</span>
+            </div>
+          </div>
+          <div class="format-badge">
+            <span class="material-symbols-outlined format-badge-icon">videocam</span>
+            <div class="format-badge-text">
+              <strong>Videos</strong>
+              <span>MP4, MOV, AVI, MKV, WEBM, FLV, M4V</span>
+            </div>
+          </div>
+          <div class="format-badge">
+            <span class="material-symbols-outlined format-badge-icon">audio_file</span>
+            <div class="format-badge-text">
+              <strong>Audio</strong>
+              <span>MP3, WAV, FLAC, AAC, OGG, M4A</span>
+            </div>
+          </div>
+          <div class="format-badge">
+            <span class="material-symbols-outlined format-badge-icon">picture_as_pdf</span>
+            <div class="format-badge-text">
+              <strong>Documents</strong>
+              <span>PDF, DOCX, XLSX, PPTX, HTML, TXT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Support & Donations -->
+      <div class="donation-section">
+        <div class="donation-card">
+          <div class="donation-icon-ring">
+            <span class="material-symbols-outlined">volunteer_activism</span>
+          </div>
+          <div class="donation-content">
+            <h3>Support TraceLess Development</h3>
+            <p>TraceLess is a free, privacy-first offline tool. Your donation helps keep the project active and supports new features!</p>
+            <a href="https://paypal.me/Benttisse" target="_blank" class="m3-btn m3-btn-filled donation-paypal-btn" id="btn-donate-paypal">
+              <span class="material-symbols-outlined">payments</span>
+              Donate with PayPal
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace -->
+    <section class="workspace hidden" id="workspace">
+
+      <!-- File list sidebar -->
+      <aside class="file-panel">
+        <div class="file-panel-header">
+          <h3>Files</h3>
+          <button class="m3-icon-btn" id="btn-add-more" title="Add more files">
+            <span class="material-symbols-outlined">add</span>
+          </button>
+        </div>
+        <div class="file-list" id="file-list"></div>
+        <button class="m3-btn m3-btn-text file-panel-clear" id="btn-clear-all">
+          <span class="material-symbols-outlined">delete_sweep</span>
+          Clear all
+        </button>
+      </aside>
+
+      <!-- Detail panel -->
+      <div class="detail-panel">
+
+        <!-- File preview card -->
+        <div class="preview-card">
+          <div class="preview-media" id="preview-media">
+            <span class="material-symbols-outlined preview-placeholder">image</span>
+          </div>
+          <div class="preview-info">
+            <div class="filename-editor-container" id="filename-container">
+              <h3 class="preview-filename" id="preview-filename">—</h3>
+              <button class="m3-icon-btn filename-edit-btn" id="btn-rename-edit" title="Rename file">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              
+              <input type="text" class="filename-edit-input hidden" id="filename-input" placeholder="Enter new filename...">
+              <button class="m3-icon-btn filename-save-btn hidden" id="btn-rename-save" title="Save name">
+                <span class="material-symbols-outlined">check</span>
+              </button>
+              <button class="m3-icon-btn filename-cancel-btn hidden" id="btn-rename-cancel" title="Cancel">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div class="preview-chips">
+              <span class="m3-chip" id="preview-filesize">0 KB</span>
+              <span class="m3-chip" id="preview-filetype">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-bar">
+          <button class="m3-btn m3-btn-tonal" id="btn-reload">
+            <span class="material-symbols-outlined">refresh</span>
+            Reload
+          </button>
+          <button class="m3-btn m3-btn-error" id="btn-clean">
+            <span class="material-symbols-outlined">cleaning_services</span>
+            Clean All
+          </button>
+          
+          <button class="m3-btn m3-btn-tonal" id="btn-clean-save-as" title="Clean metadata and save to a new location">
+            <span class="material-symbols-outlined">save_as</span>
+            Clean & Save As...
+          </button>
+          
+          <button class="m3-btn m3-btn-tonal" id="btn-presets-toggle" title="Toggle camera & metadata presets">
+            <span class="material-symbols-outlined">auto_fix_high</span>
+            Presets
+          </button>
+
+          <div class="share-dropdown-container">
+            <button class="m3-btn m3-btn-tonal" id="btn-share" title="Share file options">
+              <span class="material-symbols-outlined">share</span>
+              Share File
+            </button>
+            <div class="share-menu hidden" id="share-menu">
+              <button class="share-menu-item" id="btn-share-folder">
+                <span class="material-symbols-outlined">folder_open</span>
+                Show in File Explorer
+              </button>
+              <button class="share-menu-item" id="btn-share-copy">
+                <span class="material-symbols-outlined">content_copy</span>
+                Copy File to Clipboard
+              </button>
+              <button class="share-menu-item" id="btn-share-path">
+                <span class="material-symbols-outlined">link</span>
+                Copy File Path
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presets and Camera Profiles -->
+        <div class="preset-card hidden" id="preset-card">
+          <div class="preset-header">
+            <span class="material-symbols-outlined">photo_camera</span>
+            <h4>Quick Camera & Metadata Presets</h4>
+          </div>
+          <div class="preset-body">
+            <div class="preset-grid">
+              <div class="m3-select-wrapper">
+                <label class="m3-select-label" for="camera-select">Camera Profile</label>
+                <select id="camera-select" class="m3-select">
+                  <option value="" selected>None / Retain original</option>
+                  <option value="iphone15">Apple iPhone 15 Pro</option>
+                  <option value="iphone13">Apple iPhone 13</option>
+                  <option value="canon5d">Canon EOS 5D Mark IV</option>
+                  <option value="canonr5">Canon EOS R5</option>
+                  <option value="sony7iv">Sony Alpha 7 IV</option>
+                  <option value="sony7rv">Sony Alpha 7R V</option>
+                  <option value="fujixt5">Fujifilm X-T5</option>
+                  <option value="nikond850">Nikon D850</option>
+                  <option value="nikonz9">Nikon Z 9</option>
+                  <option value="pixel8">Google Pixel 8 Pro</option>
+                  <option value="samsung23">Samsung Galaxy S23 Ultra</option>
+                  <option value="djimavic3">DJI Mavic 3 Drone</option>
+                  <option value="gopro12">GoPro HERO12 Black</option>
+                  <option value="clear_camera">Clear Camera details</option>
+                </select>
+              </div>
+              <div class="m3-select-wrapper">
+                <label class="m3-select-label" for="meta-preset-select">Metadata Preset</label>
+                <select id="meta-preset-select" class="m3-select">
+                  <option value="" selected>None / Retain original</option>
+                  <option value="anonymous">Anonymous (Clear Author & GPS)</option>
+                  <option value="copyright_standard">Standard Copyright (© Owner)</option>
+                  <option value="cc_by">Creative Commons (CC BY 4.0)</option>
+                  <option value="strip_gps">Remove GPS Locations Only</option>
+                  <option value="windows_snip">Windows Snipping Tool (Screenshot)</option>
+                  <option value="windows_paint">Windows Paint (PC Editor)</option>
+                  <option value="photoshop_win">Adobe Photoshop CC (Windows)</option>
+                  <option value="lightroom_win">Adobe Lightroom (Windows)</option>
+                </select>
+              </div>
+              <div class="m3-select-wrapper">
+                <label class="m3-select-label" for="location-select">Location / GPS Preset</label>
+                <select id="location-select" class="m3-select">
+                  <option value="" selected>None / Retain original</option>
+                  <option value="loc_nyc">New York City, USA</option>
+                  <option value="loc_london">London, UK</option>
+                  <option value="loc_paris">Paris, France</option>
+                  <option value="loc_tokyo">Tokyo, Japan</option>
+                  <option value="loc_sydney">Sydney, Australia</option>
+                  <option value="loc_cairo">Cairo, Egypt</option>
+                  <option value="loc_rome">Rome, Italy</option>
+                  <option value="loc_sf">San Francisco, USA</option>
+                  <option value="clear_gps">Clear GPS Location</option>
+                </select>
+              </div>
+            </div>
+            <button class="m3-btn m3-btn-tonal" id="btn-apply-presets">
+              <span class="material-symbols-outlined">auto_fix_high</span>
+              Apply Preset
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="metadata-section">
+          <div class="metadata-toolbar">
+            <div class="m3-search">
+              <span class="material-symbols-outlined">search</span>
+              <input type="text" id="search-input" placeholder="Search tags…">
+            </div>
+            <span class="tag-count" id="tag-count">0 tags</span>
+          </div>
+          <div class="metadata-groups" id="metadata-groups"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FAB Group -->
+  <div class="fab-group">
+    <button class="m3-fab m3-fab-tonal hidden" id="fab-save-as" title="Save changes to a new location">
+      <span class="material-symbols-outlined">save_as</span>
+      <span>Save As...</span>
+    </button>
+    <button class="m3-fab hidden" id="fab-save" title="Save changes to original file">
+      <span class="material-symbols-outlined">save</span>
+      <span>Save Changes</span>
+    </button>
+  </div>
+
+  <!-- Snackbar -->
+  <div class="snackbar-host" id="snackbar-host"></div>
+
+  <!-- Credits -->
+  <footer class="credits-bar">
+    Created by <a href="https://www.linkedin.com/in/khalid-bentisse/" target="_blank" class="author-link"><span class="material-symbols-outlined author-icon">verified_user</span>khalid bentisse</a>
+  </footer>
+
+  <!-- Custom M3 Confirm Dialog Overlay -->
+  <div class="m3-dialog-overlay hidden" id="confirm-dialog">
+    <div class="m3-dialog-card">
+      <div class="m3-dialog-icon">
+        <span class="material-symbols-outlined">warning</span>
+      </div>
+      <h3 class="m3-dialog-title" id="confirm-dialog-title">Confirm Action</h3>
+      <p class="m3-dialog-message" id="confirm-dialog-message">Are you sure you want to proceed?</p>
+      <div class="m3-dialog-actions">
+        <button class="m3-btn m3-btn-text" id="btn-confirm-cancel">Cancel</button>
+        <button class="m3-btn m3-btn-filled m3-btn-error" id="btn-confirm-ok">Proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Screen Overlay -->
+  <div class="m3-loading-overlay hidden" id="loading-screen">
+    <div class="m3-loading-card">
+      <div class="m3-spinner">
+        <svg viewBox="0 0 50 50">
+          <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+        </svg>
+      </div>
+      <div class="m3-loading-text" id="loading-text">Processing file...</div>
+    </div>
+  </div>
+
+  <!-- History Drawer Scrim -->
+  <div class="m3-drawer-scrim hidden" id="history-drawer-scrim"></div>
+
+  <!-- History Drawer -->
+  <aside class="m3-drawer" id="history-drawer">
+    <div class="m3-drawer-header">
+      <div class="m3-drawer-title">
+        <span class="material-symbols-outlined">history</span>
+        <strong>Recent Files</strong>
+      </div>
+      <button class="m3-icon-btn" id="btn-history-drawer-close" title="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="m3-drawer-actions">
+      <button class="m3-btn m3-btn-text btn-clear-history" id="btn-clear-history" title="Clear history list">
+        <span class="material-symbols-outlined">delete_sweep</span>
+        <span>Clear All</span>
+      </button>
+    </div>
+    <div class="history-list-container" id="history-list">
+      <div class="history-empty-state">
+        <span class="material-symbols-outlined">folder_open</span>
+        <span>No recently processed files</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Update Notification Overlay -->
+  <div class="update-overlay hidden" id="update-overlay">
+    <div class="update-card">
+      <div class="update-card-header">
+        <div class="update-icon-ring">
+          <span class="material-symbols-outlined" id="update-header-icon">system_update</span>
+        </div>
+        <div class="update-header-text">
+          <h3 id="update-title">Update Available</h3>
+          <span class="update-version-badge" id="update-version-badge">v0.0.0</span>
+        </div>
+        <button class="m3-icon-btn update-close-btn" id="btn-update-close" title="Dismiss">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <div class="update-release-notes" id="update-release-notes">
+        <div class="release-notes-label">
+          <span class="material-symbols-outlined">description</span>
+          <strong>What's New</strong>
+        </div>
+        <div class="release-notes-content" id="release-notes-content">
+          <p>Loading release notes...</p>
+        </div>
+      </div>
+
+      <div class="update-progress-section hidden" id="update-progress-section">
+        <div class="update-progress-bar-track">
+          <div class="update-progress-bar-fill" id="update-progress-fill" style="width: 0%"></div>
+        </div>
+        <span class="update-progress-text" id="update-progress-text">Downloading... 0%</span>
+      </div>
+
+      <div class="update-actions" id="update-actions">
+        <button class="m3-btn m3-btn-text" id="btn-update-later">Later</button>
+        <button class="m3-btn m3-btn-filled" id="btn-update-download">
+          <span class="material-symbols-outlined">download</span>
+          Download Update
+        </button>
+        <button class="m3-btn m3-btn-filled hidden" id="btn-update-install">
+          <span class="material-symbols-outlined">restart_alt</span>
+          Restart & Install
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtle Update Toast Banner (for non-intrusive notification) -->
+  <div class="update-toast hidden" id="update-toast">
+    <span class="material-symbols-outlined toast-icon">system_update</span>
+    <div class="update-toast-text">
+      <strong id="toast-title">Update Available</strong>
+      <span id="toast-subtitle">A new version is ready</span>
+    </div>
+    <button class="m3-btn m3-btn-filled update-toast-action" id="btn-toast-view">
+      View Details
+    </button>
+    <button class="m3-icon-btn update-toast-close" id="btn-toast-close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

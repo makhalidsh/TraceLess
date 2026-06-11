@@ -1,0 +1,60 @@
+{
+  "name": "traceless",
+  "version": "1.0.0",
+  "description": "TraceLess - Metadata Editor & Cleaner using ExifTool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "keywords": [
+    "exif",
+    "metadata",
+    "cleaner",
+    "editor"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.2"
+  },
+  "build": {
+    "appId": "com.khalid.traceless",
+    "productName": "TraceLess",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": true,
+    "asarUnpack": [
+      "bin/**/*"
+    ],
+    "files": [
+      "**/*"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "TraceLess"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TraceLess",
+      "installerIcon": "logo.png",
+      "uninstallerIcon": "logo.png"
+    }
+  }
+}
