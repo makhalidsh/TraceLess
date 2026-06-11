@@ -1,10 +1,16 @@
-const { app, BrowserWindow, ipcMain, dialog, clipboard, shell, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, clipboard, shell, Menu, protocol, net } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 
 let mainWindow;
+
+// Register custom protocol for local media
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'traceless-media', privileges: { bypassCSP: true, secure: true, supportFetchAPI: true } }
+]);
 
 // Paths to bundled ExifTool (unpacked from ASAR if packaged)
 let binDir = path.join(__dirname, 'bin');
@@ -33,7 +39,11 @@ function createWindow() {
     show: false,
   });
 
-  mainWindow.loadFile('index.html');
+  if (process.argv.includes('--run-qa-audit')) {
+    mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}?qa-audit=true`);
+  } else {
+    mainWindow.loadFile('index.html');
+  }
   
   // Prevent keyboard shortcuts from opening developer tools (F12, Ctrl+Shift+I, Cmd+Alt+I)
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -87,6 +97,20 @@ process.on('uncaughtException', (err) => {
 });
 
 app.whenReady().then(() => {
+  // Handle custom media protocol
+  protocol.handle('traceless-media', (request) => {
+    try {
+      const url = new URL(request.url);
+      let filePath = decodeURIComponent(url.pathname);
+      if (process.platform === 'win32' && filePath.startsWith('/')) {
+        filePath = filePath.slice(1);
+      }
+      return net.fetch(pathToFileURL(filePath).toString());
+    } catch (err) {
+      return new Response('Error parsing path', { status: 400 });
+    }
+  });
+
   // Set up standard Edit menu to enable copy/paste shortcuts on Windows/Linux in frameless window
   const template = [
     {
@@ -155,6 +179,38 @@ function runExifTool(args) {
 }
 
 // --- IPC Handlers ---
+ipcMain.handle('resize-window', (_event, { width, height }) => {
+  if (mainWindow) {
+    mainWindow.unmaximize();
+    mainWindow.setSize(width, height);
+    mainWindow.center();
+  }
+});
+
+ipcMain.handle('maximize-window', () => {
+  if (mainWindow) mainWindow.maximize();
+});
+
+ipcMain.handle('unmaximize-window', () => {
+  if (mainWindow) mainWindow.unmaximize();
+});
+
+ipcMain.handle('capture-screenshot', async (_event, name) => {
+  try {
+    const image = await mainWindow.capturePage();
+    // Save screenshots inside the artifacts directory
+    const screenshotDir = path.join('C:\\Users\\kkk\\.gemini\\antigravity\\brain\\d6d8beec-1437-41d1-bcd8-1dd3b44cb1ca', 'screenshots');
+    if (!fs.existsSync(screenshotDir)) {
+      fs.mkdirSync(screenshotDir, { recursive: true });
+    }
+    const filePath = path.join(screenshotDir, `${name}.png`);
+    await fs.promises.writeFile(filePath, image.toPNG());
+    return { success: true, filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('select-files', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile', 'multiSelections'],
@@ -167,17 +223,37 @@ ipcMain.handle('select-files', async () => {
     ],
   });
   if (result.canceled) return [];
-  return result.filePaths;
+  return result.filePaths.map(filePath => {
+    try {
+      const stats = fs.statSync(filePath);
+      return {
+        path: filePath,
+        name: path.basename(filePath),
+        size: stats.size
+      };
+    } catch (err) {
+      return {
+        path: filePath,
+        name: path.basename(filePath),
+        size: 0
+      };
+    }
+  });
 });
 
 ipcMain.handle('read-metadata', async (_event, filePath) => {
   try {
     const { stdout } = await runExifTool(['-json', '-g', '-a', filePath]);
-    return { success: true, data: JSON.parse(stdout)[0] };
+    let size = 0;
+    try {
+      size = fs.statSync(filePath).size;
+    } catch (e) {}
+    return { success: true, data: JSON.parse(stdout)[0], size };
   } catch (err) {
     return { success: false, error: err.message };
   }
 });
+
 
 ipcMain.handle('write-metadata', async (_event, { filePath, tags, overwrite }) => {
   try {

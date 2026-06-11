@@ -126,7 +126,7 @@
               Select Files
             </button>
             <div class="upload-security-note">
-              <span class="material-symbols-outlined">lan_off</span>
+              <span class="material-symbols-outlined">wifi_off</span>
               <span>100% Offline Local Processing</span>
             </div>
           </div>
@@ -208,22 +208,7 @@
         </div>
       </div>
 
-      <!-- Support & Donations -->
-      <div class="donation-section">
-        <div class="donation-card">
-          <div class="donation-icon-ring">
-            <span class="material-symbols-outlined">volunteer_activism</span>
-          </div>
-          <div class="donation-content">
-            <h3>Support TraceLess Development</h3>
-            <p>TraceLess is a free, privacy-first offline tool. Your donation helps keep the project active and supports new features!</p>
-            <a href="https://paypal.me/Benttisse" target="_blank" class="m3-btn m3-btn-filled donation-paypal-btn" id="btn-donate-paypal">
-              <span class="material-symbols-outlined">payments</span>
-              Donate with PayPal
-            </a>
-          </div>
-        </div>
-      </div>
+
     </section>
 
     <!-- Workspace -->
@@ -232,7 +217,10 @@
       <!-- File list sidebar -->
       <aside class="file-panel">
         <div class="file-panel-header">
-          <h3>Files</h3>
+          <button class="m3-icon-btn" id="btn-go-home" title="Go back to home screen" style="margin-right: 8px;">
+            <span class="material-symbols-outlined">home</span>
+          </button>
+          <h3 style="flex: 1;">Files</h3>
           <button class="m3-icon-btn" id="btn-add-more" title="Add more files">
             <span class="material-symbols-outlined">add</span>
           </button>
@@ -458,7 +446,11 @@
         <span class="material-symbols-outlined">close</span>
       </button>
     </div>
-    <div class="m3-drawer-actions">
+    <div class="m3-drawer-actions" style="justify-content: space-between;">
+      <button class="m3-btn m3-btn-text" id="btn-test-update" title="Simulate update check for testing" style="color: var(--md-secondary);">
+        <span class="material-symbols-outlined">bug_report</span>
+        <span>Test Update UI</span>
+      </button>
       <button class="m3-btn m3-btn-text btn-clear-history" id="btn-clear-history" title="Clear history list">
         <span class="material-symbols-outlined">delete_sweep</span>
         <span>Clear All</span>

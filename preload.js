@@ -26,4 +26,10 @@ contextBridge.exposeInMainWorld('traceless', {
   downloadUpdate: () => ipcRenderer.send('update-download'),
   installUpdate: () => ipcRenderer.send('update-install'),
   checkForUpdate: () => ipcRenderer.send('update-check'),
+
+  // Visual Validation Automation
+  resizeWindow: (width, height) => ipcRenderer.invoke('resize-window', { width, height }),
+  maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
+  unmaximizeWindow: () => ipcRenderer.invoke('unmaximize-window'),
+  captureScreenshot: (name) => ipcRenderer.invoke('capture-screenshot', name),
 });

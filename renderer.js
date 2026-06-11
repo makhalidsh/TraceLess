@@ -197,38 +197,18 @@ function snackbar(msg) {
   snackbarHost.appendChild(el);
   setTimeout(() => {
     el.classList.add('out');
-    el.addEventListener('animationend', () => el.remove());
+    let removed = false;
+    const removeEl = () => {
+      if (!removed) {
+        removed = true;
+        el.remove();
+      }
+    };
+    el.addEventListener('animationend', removeEl);
+    setTimeout(removeEl, 300);
   }, 3000);
 }
 
-function showConfirm(title, message, okText = 'OK') {
-  return new Promise((resolve) => {
-    const dialogOverlay = $('confirm-dialog');
-    const dialogTitle = $('confirm-dialog-title');
-    const dialogMessage = $('confirm-dialog-message');
-    const btnCancel = $('btn-confirm-cancel');
-    const btnOk = $('btn-confirm-ok');
-
-    dialogTitle.textContent = title;
-    dialogMessage.textContent = message;
-    btnOk.textContent = okText;
-
-    dialogOverlay.classList.remove('hidden');
-
-    function cleanup(result) {
-      dialogOverlay.classList.add('hidden');
-      btnOk.removeEventListener('click', onOk);
-      btnCancel.removeEventListener('click', onCancel);
-      resolve(result);
-    }
-
-    function onOk() { cleanup(true); }
-    function onCancel() { cleanup(false); }
-
-    btnOk.addEventListener('click', onOk);
-    btnCancel.addEventListener('click', onCancel);
-  });
-}
 
 // ---- Prevent default drag on window ----
 window.addEventListener('dragover', e => e.preventDefault());
@@ -289,10 +269,18 @@ function renderFileList() {
   files.forEach((f, i) => {
     const el = document.createElement('div');
     el.className = 'file-list-item' + (i === activeIndex ? ' active' : '');
+    
+    const cleanBadgeHtml = f.isClean 
+      ? `<span class="material-symbols-outlined file-list-item-clean-badge" title="This file is clean of metadata tracking tags.">verified_user</span>`
+      : '';
+      
     el.innerHTML = `
       <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">${iconForFile(f.name)}</span>
       <div class="file-list-item-info">
-        <div class="file-list-item-name">${f.name}</div>
+        <div class="file-list-item-name-row">
+          <div class="file-list-item-name">${f.name}</div>
+          ${cleanBadgeHtml}
+        </div>
         <div class="file-list-item-size">${f.size ? fmtBytes(f.size) : '—'}</div>
       </div>`;
     el.addEventListener('click', () => selectFile(i));
@@ -316,6 +304,27 @@ btnClearAll.addEventListener('click', () => {
   showEmpty();
 });
 
+// ---- Go Home ----
+const btnGoHome = $('btn-go-home');
+if (btnGoHome) {
+  btnGoHome.addEventListener('click', () => {
+    showEmpty();
+  });
+}
+
+function checkMetadataIsClean(data) {
+  if (!data) return true;
+  const systemGroups = new Set(['file', 'composite', 'system', 'exiftool']);
+  
+  for (const [group, tags] of Object.entries(data)) {
+    if (systemGroups.has(group.toLowerCase())) continue;
+    if (typeof tags === 'object' && tags !== null && Object.keys(tags).length > 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // ---- Select & load file ----
 async function selectFile(idx) {
   if (idx < 0 || idx >= files.length) return;
@@ -334,7 +343,7 @@ async function selectFile(idx) {
   previewMedia.innerHTML = '';
   if (isImageExt(f.name)) {
     const img = document.createElement('img');
-    img.src = 'file:///' + f.path.replace(/\\/g, '/');
+    img.src = 'traceless-media://local-file/' + encodeURIComponent(f.path);
     img.onerror = () => {
       previewMedia.innerHTML = `<span class="material-symbols-outlined preview-placeholder" style="font-variation-settings:'FILL' 1">${iconForFile(f.name)}</span>`;
     };
@@ -350,9 +359,18 @@ async function selectFile(idx) {
 
   if (res.success) {
     originalMeta = res.data;
+    if (res.size !== undefined) {
+      f.size = res.size;
+      previewSize.textContent = fmtBytes(f.size);
+    }
     if (cameraSelect) cameraSelect.value = '';
     if (metaPresetSelect) metaPresetSelect.value = '';
     if (locationSelect) locationSelect.value = '';
+    
+    // Evaluate if the file is clean
+    f.isClean = checkMetadataIsClean(res.data);
+    renderFileList(); // Refresh the list to show the lock badge and updated size
+    
     renderMetadata(res.data);
   } else {
     metaGroups.innerHTML = `<p style="padding:16px;color:var(--md-sys-color-error)">${res.error}</p>`;
@@ -399,6 +417,8 @@ function renderMetadata(data) {
     const row = document.createElement('div');
     row.className = 'm3-field common-field';
     row.setAttribute('data-common-tag', f.tag);
+    row.setAttribute('data-key', f.tag.toLowerCase());
+    row.setAttribute('data-val', valStr.toLowerCase());
 
     const label = document.createElement('span');
     label.className = 'm3-field-label';
@@ -458,6 +478,7 @@ function renderMetadata(data) {
 
   for (const [group, tags] of Object.entries(data)) {
     if (typeof tags !== 'object' || tags === null) continue;
+    if (group.toLowerCase() === 'exiftool') continue;
 
     const isReadOnly = readOnlyGroups.has(group.toLowerCase());
     const keys = Object.keys(tags).sort();
@@ -548,8 +569,8 @@ searchInput.addEventListener('input', () => {
   document.querySelectorAll('.meta-group').forEach(group => {
     let anyVisible = false;
     group.querySelectorAll('.m3-field').forEach(field => {
-      const k = field.getAttribute('data-key');
-      const v = field.getAttribute('data-val');
+      const k = field.getAttribute('data-key') || '';
+      const v = field.getAttribute('data-val') || '';
       const show = k.includes(q) || v.includes(q);
       field.style.display = show ? '' : 'none';
       if (show) anyVisible = true;
@@ -1186,6 +1207,15 @@ if (btnClose) {
   btnClose.addEventListener('click', () => window.traceless.close());
 }
 
+const topBar = document.querySelector('.top-bar');
+if (topBar) {
+  topBar.addEventListener('dblclick', (e) => {
+    if (!e.target.closest('.no-drag') && !e.target.closest('.window-control-btn') && !e.target.closest('.m3-icon-btn')) {
+      window.traceless.maximize();
+    }
+  });
+}
+
 // ---- Disable Context Menu ----
 window.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -1486,6 +1516,7 @@ function renderHistory() {
     const leftSide = el.querySelector('.history-item-left');
     leftSide.addEventListener('click', () => {
       addFiles([{ path: item.path, name: item.name, size: item.size }]);
+      closeHistoryDrawer(); // Close the drawer
     });
     
     // Click remove button to clear from history
@@ -1703,6 +1734,161 @@ function showUpdateReady(data) {
   }
 }
 
+// --- Update Simulation Logic (for testing UI flow) ---
+let isSimulatingUpdate = false;
+const btnTestUpdate = $('btn-test-update');
+
+function startUpdateSimulation() {
+  isSimulatingUpdate = true;
+  closeHistoryDrawer(); // Close drawer to make toast visible
+  
+  // Show a snackbar message
+  snackbar('Simulating update check... ⏳');
+  
+  setTimeout(() => {
+    pendingUpdateInfo = {
+      status: 'available',
+      version: '1.1.0',
+      releaseDate: new Date().toISOString(),
+      releaseNotes: `
+        <h3>TraceLess v1.1.0</h3>
+        <p>This is a simulated update to demonstrate the Auto-Updater system. It includes:</p>
+        <ul>
+          <li><strong>Date/Time Picker Integration</strong>: Beautiful calendar dropdown selectors replace simple text fields.</li>
+          <li><strong>Slide-out Drawer</strong>: Move Recent Files into a side panel to reduce clutter.</li>
+          <li><strong>Theme Auto-Detection</strong>: Native form elements automatically match light and dark modes.</li>
+        </ul>
+        <p>Click "Download Update" to see the progress bar in action!</p>
+      `
+    };
+    handleUpdateStatus(pendingUpdateInfo);
+  }, 1000);
+}
+
+// Global Keyboard Shortcuts
+window.addEventListener('keydown', (e) => {
+  // 1. Simulator hotkey: Ctrl + Shift + U
+  if (e.ctrlKey && e.shiftKey && e.code === 'KeyU') {
+    e.preventDefault();
+    startUpdateSimulation();
+    return;
+  }
+
+  // 2. Identify if target is an editable input or field, to prevent interrupting normal text entry
+  const tag = e.target.tagName.toLowerCase();
+  const isInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+  
+  // Shortcuts that work even when inputs are focused (except when Esc is pressed inside an input to cancel it)
+  if (e.key === 'Escape') {
+    if (e.target === filenameInput) {
+      stopEditingFilename();
+      return;
+    }
+    // Close history drawer if open
+    if (historyDrawer && historyDrawer.classList.contains('open')) {
+      closeHistoryDrawer();
+      return;
+    }
+    // Close update overlay if open
+    if (updateOverlay && !updateOverlay.classList.contains('hidden')) {
+      hideUpdateOverlay();
+      return;
+    }
+    // Close preset card if open
+    if (presetCard && !presetCard.classList.contains('hidden')) {
+      presetCard.classList.add('hidden');
+      if (btnPresetsToggle) btnPresetsToggle.classList.remove('active');
+      return;
+    }
+  }
+
+  // If inside an input, don't trigger other single-key navigation shortcuts (like arrow keys, j, k, etc.)
+  if (isInput && !e.ctrlKey && !e.metaKey) {
+    return;
+  }
+
+  // J/K or Up/Down Arrow File List Navigation (only if files are loaded and we are not in an input)
+  if (!isInput && files.length > 0) {
+    if (e.key === 'ArrowDown' || e.key === 'j') {
+      e.preventDefault();
+      const nextIdx = (activeIndex + 1) % files.length;
+      selectFile(nextIdx);
+      return;
+    }
+    if (e.key === 'ArrowUp' || e.key === 'k') {
+      e.preventDefault();
+      const prevIdx = (activeIndex - 1 + files.length) % files.length;
+      selectFile(prevIdx);
+      return;
+    }
+  }
+
+  // Ctrl/Cmd based application shortcuts
+  const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+  if (isCmdOrCtrl) {
+    const key = e.key.toLowerCase();
+    
+    // Ctrl + O: Open file browser dialog
+    if (key === 'o') {
+      e.preventDefault();
+      openNativeDialog();
+    }
+    // Ctrl + S: Save changes
+    else if (key === 's') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        // Ctrl + Shift + S: Save As
+        if (Object.keys(dirtyTags).length > 0) {
+          executeSaveAs();
+        } else {
+          snackbar('No modified metadata to Save As');
+        }
+      } else {
+        if (Object.keys(dirtyTags).length > 0) {
+          executeSave();
+        } else {
+          snackbar('No changes to save');
+        }
+      }
+    }
+    // Ctrl + R: Reload
+    else if (key === 'r') {
+      e.preventDefault();
+      if (activeIndex >= 0) {
+        selectFile(activeIndex);
+      }
+    }
+    // Ctrl + Shift + C: Clean all metadata
+    else if (key === 'c' && e.shiftKey) {
+      e.preventDefault();
+      if (activeIndex >= 0) {
+        btnClean.click(); // trigger the confirmation & execution flow
+      }
+    }
+    // Ctrl + H: Toggle History Drawer
+    else if (key === 'h') {
+      e.preventDefault();
+      if (historyDrawer && historyDrawer.classList.contains('open')) {
+        closeHistoryDrawer();
+      } else {
+        openHistoryDrawer();
+      }
+    }
+    // Ctrl + F: Focus search input
+    else if (key === 'f') {
+      e.preventDefault();
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    }
+  }
+});
+
+if (btnTestUpdate) {
+  btnTestUpdate.addEventListener('click', startUpdateSimulation);
+}
+
 // --- Event Listeners ---
 if (btnToastView) {
   btnToastView.addEventListener('click', () => {
@@ -1726,21 +1912,189 @@ if (btnUpdateLater) {
 
 if (btnUpdateDownload) {
   btnUpdateDownload.addEventListener('click', () => {
-    if (window.traceless.downloadUpdate) {
-      window.traceless.downloadUpdate();
+    if (isSimulatingUpdate) {
       btnUpdateDownload.disabled = true;
       btnUpdateDownload.innerHTML = `
         <span class="material-symbols-outlined">hourglass_top</span>
         Starting Download...
       `;
+      
+      let percent = 0;
+      setTimeout(() => {
+        // Show download progress section
+        updateProgressSection.classList.remove('hidden');
+        btnUpdateDownload.classList.add('hidden');
+        btnUpdateLater.classList.add('hidden');
+        
+        const interval = setInterval(() => {
+          percent += 10;
+          handleUpdateStatus({
+            status: 'downloading',
+            percent: percent
+          });
+          
+          if (percent >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              handleUpdateStatus({
+                status: 'downloaded',
+                version: '1.1.0',
+                releaseNotes: 'Simulation complete! In production, this would relaunch the app with the update.'
+              });
+            }, 500);
+          }
+        }, 250); // Increment every 250ms
+      }, 800);
+    } else {
+      if (window.traceless.downloadUpdate) {
+        window.traceless.downloadUpdate();
+        btnUpdateDownload.disabled = true;
+        btnUpdateDownload.innerHTML = `
+          <span class="material-symbols-outlined">hourglass_top</span>
+          Starting Download...
+        `;
+      }
     }
   });
 }
 
 if (btnUpdateInstall) {
   btnUpdateInstall.addEventListener('click', () => {
-    if (window.traceless.installUpdate) {
-      window.traceless.installUpdate();
+    if (isSimulatingUpdate) {
+      isSimulatingUpdate = false;
+      hideUpdateOverlay();
+      hideUpdateToast();
+      snackbar('Restart simulated successfully! ✓');
+    } else {
+      if (window.traceless.installUpdate) {
+        window.traceless.installUpdate();
+      }
     }
   });
+}
+
+// ==========================================
+// AUTOMATED QA VISUAL VALIDATION AUDIT RUNNER
+// ==========================================
+async function runVisualValidationAudit() {
+  snackbar('QA Audit started: Capturing window states... 📷');
+  showLoading('Running Visual Audit Automation...');
+  
+  // Helper for delays
+  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  try {
+    // ---- Phase 1: Landing Dashboard in various resolutions ----
+    showEmpty(); // ensure we are on empty landing state
+    await wait(300);
+    
+    // 1. Small desktop
+    await window.traceless.resizeWindow(900, 600);
+    await wait(500);
+    await window.traceless.captureScreenshot('1_landing_small_desktop');
+    
+    // 2. Standard desktop
+    await window.traceless.resizeWindow(1280, 860);
+    await wait(500);
+    await window.traceless.captureScreenshot('2_landing_standard_desktop');
+    
+    // 3. Large desktop
+    await window.traceless.resizeWindow(1920, 1080);
+    await wait(500);
+    await window.traceless.captureScreenshot('3_landing_large_desktop');
+    
+    // 4. Maximized desktop
+    await window.traceless.maximizeWindow();
+    await wait(800);
+    await window.traceless.captureScreenshot('4_landing_maximized_desktop');
+    
+    // Restore standard size for remaining screenshots
+    await window.traceless.resizeWindow(1280, 860);
+    await wait(500);
+    
+    // ---- Phase 2: Add logo.png file programmatically to transition to Workspace ----
+    const mockFilePath = 'C:\\Users\\kkk\\Desktop\\TraceLess\\logo.png';
+    addFiles([{ path: mockFilePath, name: 'logo.png', size: 1455714 }]);
+    await wait(1500); // Wait for ExifTool to read metadata
+    
+    // 5. Workspace Dashboard
+    await window.traceless.captureScreenshot('5_workspace_dashboard');
+    
+    // 6. Preset Panel Open
+    if (presetCard && btnPresetsToggle) {
+      presetCard.classList.remove('hidden');
+      btnPresetsToggle.classList.add('active');
+      await wait(300);
+      await window.traceless.captureScreenshot('6_presets_panel_open');
+      presetCard.classList.add('hidden');
+      btnPresetsToggle.classList.remove('active');
+    }
+    
+    // 7. Recent Files Drawer Open
+    openHistoryDrawer();
+    await wait(400);
+    await window.traceless.captureScreenshot('7_recent_files_drawer');
+    closeHistoryDrawer();
+    await wait(400);
+    
+    // 8. Simulated Update Overlay Open
+    isSimulatingUpdate = true;
+    const testUpdateData = {
+      version: '1.1.0',
+      releaseNotes: '<h3>TraceLess v1.1.0</h3><p>Simulating update layout inside visual validation runner.</p>'
+    };
+    showUpdateOverlay(testUpdateData);
+    await wait(500);
+    await window.traceless.captureScreenshot('8_update_overlay_open');
+    hideUpdateOverlay();
+    await wait(300);
+    
+    // 9. Confirm Dialog Open
+    const dialog = $('confirm-dialog');
+    const titleEl = $('confirm-dialog-title');
+    const msgEl = $('confirm-dialog-message');
+    if (dialog && titleEl && msgEl) {
+      titleEl.textContent = 'Verification Audit';
+      msgEl.textContent = 'This is a simulated confirmation modal to verify visual layouts.';
+      dialog.classList.remove('hidden');
+      await wait(300);
+      await window.traceless.captureScreenshot('9_confirm_dialog_open');
+      dialog.classList.add('hidden');
+    }
+    
+    // 10. Share Dropdown Open
+    if (shareMenu) {
+      shareMenu.classList.remove('hidden');
+      await wait(300);
+      await window.traceless.captureScreenshot('10_share_dropdown_open');
+      shareMenu.classList.add('hidden');
+    }
+    
+    // 11. Empty State Restore
+    showEmpty();
+    await wait(300);
+    
+    snackbar('QA Audit complete! 10 screenshots captured successfully! 📸');
+  } catch (err) {
+    console.error('Audit failed:', err);
+    snackbar('QA Audit failed: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+// Add shortcut for QA Audit: Ctrl + Shift + A
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
+    e.preventDefault();
+    runVisualValidationAudit();
+  }
+});
+
+// Automatically trigger QA Audit on startup if ?qa-audit=true query parameter is present
+if (window.location.search.includes('qa-audit=true')) {
+  console.log('[QA AUDIT] Automatically launching visual validation audit...');
+  setTimeout(() => {
+    runVisualValidationAudit();
+  }, 2000);
 }

@@ -1,6 +1,6 @@
 {
   "name": "traceless",
-  "version": "1.0.0",
+  "version": "1.2.1",
   "description": "TraceLess - Metadata Editor & Cleaner using ExifTool",
   "main": "main.js",
   "scripts": {
@@ -54,7 +54,10 @@
       "createStartMenuShortcut": true,
       "shortcutName": "TraceLess",
       "installerIcon": "logo.ico",
-      "uninstallerIcon": "logo.ico"
+      "uninstallerIcon": "logo.ico",
+      "installerHeader": "build/installerHeader.bmp",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "installerHeaderIcon": "logo.ico"
     }
   }
 }
