@@ -45,7 +45,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "logo.png"
+      "icon": "logo.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -53,8 +53,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "TraceLess",
-      "installerIcon": "logo.png",
-      "uninstallerIcon": "logo.png"
+      "installerIcon": "logo.ico",
+      "uninstallerIcon": "logo.ico"
     }
   }
 }
